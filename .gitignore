@@ -1,0 +1,16 @@
+
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.venv/
+venv/
+test.db
+node_modules/
+dist/
+.env
+.idea/
+.vscode/
+.terraform/
+*.tfstate
+*.tfstate.*
+.DS_Store
