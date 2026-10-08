@@ -17,11 +17,10 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-
   backend-tests:
-    name: Backend Tests
+    name: Backend Tests & Code Quality
     runs-on: ubuntu-24.04
-    timeout-minutes: 10
+    timeout-minutes: 15
 
     defaults:
       run:
@@ -55,6 +54,13 @@ jobs:
             --cov-report=xml:coverage.xml \
             --cov-fail-under=70
 
+      - name: SonarQube Cloud Scan
+        uses: SonarSource/sonarqube-scan-action@v7
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        with:
+          projectBaseDir: .
+
   frontend-build:
     name: Frontend Build
     runs-on: ubuntu-24.04
@@ -81,7 +87,6 @@ jobs:
       - name: Build frontend
         run: npm run build
 
-
   docker-build:
     name: Docker Build Validation
     runs-on: ubuntu-24.04
@@ -102,7 +107,6 @@ jobs:
           docker build \
             --tag cloudcart-frontend:${{ github.sha }} \
             app/frontend
-
 
   trivy-scan:
     name: Trivy Security Scan
