@@ -9,10 +9,19 @@ on:
     branches:
       - main
 
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
+
   backend-tests:
     name: Backend Tests
     runs-on: ubuntu-24.04
+    timeout-minutes: 10
 
     defaults:
       run:
@@ -20,25 +29,29 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v5
+        uses: actions/checkout@v7
 
       - name: Set up Python
-        uses: actions/setup-python@v6
+        uses: actions/setup-python@v7
         with:
           python-version: "3.12"
+          cache: pip
+          cache-dependency-path: app/backend/requirements.txt
 
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install -r requirements.txt
+      - name: Upgrade pip
+        run: python -m pip install --upgrade pip
+
+      - name: Install backend dependencies
+        run: python -m pip install -r requirements.txt
 
       - name: Run backend tests
-        run: |
-          python -m pytest -v
+        run: python -m pytest -v
+
 
   frontend-build:
     name: Frontend Build
     runs-on: ubuntu-24.04
+    timeout-minutes: 10
 
     defaults:
       run:
@@ -46,33 +59,81 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v5
+        uses: actions/checkout@v7
 
       - name: Set up Node.js
-        uses: actions/setup-node@v5
+        uses: actions/setup-node@v7
         with:
           node-version: "22"
+          cache: npm
+          cache-dependency-path: app/frontend/package-lock.json
 
-      - name: Install dependencies
-        run: |
-          npm install
+      - name: Install frontend dependencies
+        run: npm ci
 
       - name: Build frontend
-        run: |
-          npm run build
+        run: npm run build
+
 
   docker-build:
     name: Docker Build Validation
     runs-on: ubuntu-24.04
+    timeout-minutes: 15
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v5
+        uses: actions/checkout@v7
 
       - name: Build backend image
         run: |
-          docker build -t cloudcart-backend:test app/backend
+          docker build \
+            --tag cloudcart-backend:${{ github.sha }} \
+            app/backend
 
       - name: Build frontend image
         run: |
-          docker build -t cloudcart-frontend:test app/frontend
+          docker build \
+            --tag cloudcart-frontend:${{ github.sha }} \
+            app/frontend
+
+
+  trivy-scan:
+    name: Trivy Security Scan
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+
+      - name: Build backend image for security scan
+        run: |
+          docker build \
+            --tag cloudcart-backend:${{ github.sha }} \
+            app/backend
+
+      - name: Build frontend image for security scan
+        run: |
+          docker build \
+            --tag cloudcart-frontend:${{ github.sha }} \
+            app/frontend
+
+      - name: Scan backend image
+        uses: aquasecurity/trivy-action@v0.36.0
+        with:
+          image-ref: "cloudcart-backend:${{ github.sha }}"
+          format: "table"
+          exit-code: "1"
+          ignore-unfixed: true
+          vuln-type: "os,library"
+          severity: "CRITICAL,HIGH"
+
+      - name: Scan frontend image
+        uses: aquasecurity/trivy-action@v0.36.0
+        with:
+          image-ref: "cloudcart-frontend:${{ github.sha }}"
+          format: "table"
+          exit-code: "1"
+          ignore-unfixed: true
+          vuln-type: "os,library"
+          severity: "CRITICAL,HIGH"
