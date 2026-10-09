@@ -6,7 +6,8 @@ services:
     environment:
       POSTGRES_DB: cloudcart
       POSTGRES_USER: cloudcart
-      POSTGRES_PASSWORD: cloudcart
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
@@ -25,7 +26,7 @@ services:
       APP_VERSION: 1.0.0
       ENVIRONMENT: local
       GIT_COMMIT: local
-      DATABASE_URL: postgresql+psycopg://cloudcart:cloudcart@postgres:5432/cloudcart
+      DATABASE_URL: ${DATABASE_URL}
       CORS_ORIGINS: http://localhost:3000,http://localhost:5173
     ports:
       - "8000:8000"
