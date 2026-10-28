@@ -26,8 +26,18 @@ This installs cluster-wide controller permissions and CRDs, so do it only on the
 isolated lab. Production Argo installation, SSO/RBAC, audit, backup, and upgrade
 policies need their own reviewed platform change. Do not expose the admin UI
 publicly. For local access, port-forward `service/argocd-server` port 24443 to
-443 in namespace `argocd`. Retrieve the initial admin password privately from the
-cluster using the official Argo instructions; never paste it into Git or chat.
+443 in namespace `argocd`. The initial username is `admin`. In your own private terminal (never paste the
+output into Git or chat), retrieve the temporary password:
+
+```powershell
+$encoded = kubectl --kubeconfig $kube -n argocd get secret argocd-initial-admin-secret -o 'jsonpath={.data.password}'
+[Text.Encoding]::UTF8.GetString([Convert]::FromBase64String($encoded))
+```
+
+The local server uses a self-signed HTTPS certificate. That is a local-lab setup,
+not a production certificate policy. Change the initial password after login;
+production should use approved SSO/RBAC. For this execution, the UI is already
+forwarded at https://localhost:24443.
 
 ## Local Application
 

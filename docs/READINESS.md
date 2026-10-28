@@ -82,3 +82,17 @@ compatibility option. Production must use a supported cgroup-v2 host. The defaul
 Kind CNI does not establish NetworkPolicy enforcement. Kubernetes Secret storage
 is not claimed encrypted at rest. No cloud deployment, restore drill, production
 ingress/access-control test, or high-availability claim is made by this lab.
+
+### Verified GitOps result
+
+Argo CD manually synced Git commit `d5aaa4628a256f4a6ece23d0a8b0fd655c75a688`
+and reported `Synced`, `Healthy`, and operation `Succeeded`. The database PVC
+remained Bound during the handoff. Direct localhost checks returned frontend
+HTTP 200 and API readiness with database connected. The shop is forwarded at
+http://localhost:23000 and the API at http://localhost:28000. These local forwards
+last only while their kubectl processes run.
+
+[CI run 40784503174](https://github.com/gorvshrma/Ecommerce/actions/runs/40784503174)
+passed all seven jobs for that commit. The seventh Kubernetes/Helm check is now
+required by the active main rules. No AWS resources were created. The exact
+cluster setup and its limits are in [Kubernetes](KUBERNETES.md).
