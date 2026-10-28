@@ -18,6 +18,7 @@ itself does not trigger this workflow; open a PR.
 | Docker Build Validation | Package the backend and frontend | Both images build |
 | Trivy Security Scan (backend) | Look for known issues in the backend image | No fixable HIGH/CRITICAL issues |
 | Trivy Security Scan (frontend) | Check the frontend image separately | Same policy |
+| Kubernetes and Helm Validation | Lint, render, reject unsafe profiles, check schemas and GitOps scope | All checks pass without a cluster |
 | Terraform Validation | Check infrastructure format, schema, mocked security tests, Git hygiene, and Checkov | All checks pass; no AWS credentials or apply |
 
 Both scan jobs run even if one fails. A passing vulnerability scan does not mean

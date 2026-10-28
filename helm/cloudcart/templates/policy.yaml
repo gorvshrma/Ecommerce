@@ -1,0 +1,66 @@
+{{- if .Values.networkPolicy.enabled }}
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ include "cloudcart.name" . }}-default-deny
+spec:
+  podSelector: {matchLabels: {app: {{ include "cloudcart.name" . }}}}
+  policyTypes: [Ingress, Egress]
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ include "cloudcart.name" . }}-dns
+spec:
+  podSelector: {matchLabels: {app: {{ include "cloudcart.name" . }}}}
+  policyTypes: [Egress]
+  egress:
+    - to:
+        - namespaceSelector: {matchLabels: {kubernetes.io/metadata.name: kube-system}}
+          podSelector: {matchLabels: {k8s-app: kube-dns}}
+      ports: [{protocol: UDP, port: 53}, {protocol: TCP, port: 53}]
+{{- range $name := list "frontend" "backend" }}
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ include "cloudcart.name" $ }}-{{ $name }}-ingress
+spec:
+  podSelector: {matchLabels: {app: {{ include "cloudcart.name" $ }}, component: {{ $name }}}}
+  policyTypes: [Ingress]
+  ingress:
+    - from:
+        - namespaceSelector: {matchLabels: {kubernetes.io/metadata.name: {{ $.Values.networkPolicy.ingressNamespace }}}}
+      ports: [{protocol: TCP, port: {{ ternary 8080 8000 (eq $name "frontend") }}}]
+{{- end }}
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ include "cloudcart.name" . }}-database-egress
+spec:
+  podSelector: {matchLabels: {app: {{ include "cloudcart.name" . }}, component: backend}}
+  policyTypes: [Egress]
+  egress:
+    - to:
+        {{- if .Values.postgres.enabled }}
+        - podSelector: {matchLabels: {app: {{ include "cloudcart.name" . }}, component: postgres}}
+        {{- else }}
+        - ipBlock: {cidr: {{ required "Set postgres.externalCidr" .Values.postgres.externalCidr }}}
+        {{- end }}
+      ports: [{protocol: TCP, port: 5432}]
+{{- if .Values.postgres.enabled }}
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ include "cloudcart.name" . }}-database-ingress
+spec:
+  podSelector: {matchLabels: {app: {{ include "cloudcart.name" . }}, component: postgres}}
+  policyTypes: [Ingress]
+  ingress:
+    - from:
+        - podSelector: {matchLabels: {app: {{ include "cloudcart.name" . }}, component: backend}}
+      ports: [{protocol: TCP, port: 5432}]
+{{- end }}
+{{- end }}

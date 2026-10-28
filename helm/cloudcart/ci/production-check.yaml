@@ -1,0 +1,13 @@
+# Offline renderer fixture only: fake images/hostname; never deploy these inputs.
+frontend:
+  image: example.invalid/frontend@sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+backend:
+  image: example.invalid/backend@sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb
+corsOrigins: https://demo.example.com
+postgres:
+  externalCidr: 10.40.20.0/24
+ingress:
+  className: offline-test
+  host: demo.example.com
+  tlsSecret: offline-test
+  accessControlsVerified: true

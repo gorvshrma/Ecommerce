@@ -1,0 +1,18 @@
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: cloudcart
+  namespace: argocd
+spec:
+  sourceRepos: [https://github.com/gorvshrma/Ecommerce.git]
+  destinations:
+    - {namespace: cloudcart, server: 'https://kubernetes.default.svc'}
+  clusterResourceWhitelist: []
+  namespaceResourceWhitelist:
+    - {group: '', kind: Service}
+    - {group: '', kind: ConfigMap}
+    - {group: apps, kind: Deployment}
+    - {group: apps, kind: StatefulSet}
+    - {group: networking.k8s.io, kind: NetworkPolicy}
+    - {group: networking.k8s.io, kind: Ingress}
+    - {group: policy, kind: PodDisruptionBudget}

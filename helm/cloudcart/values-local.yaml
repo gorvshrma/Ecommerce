@@ -1,0 +1,4 @@
+# Build this image with VITE_API_URL=http://localhost:28000 and load it into Kind.
+frontend:
+  image: cloudcart-k8s-frontend:local
+corsOrigins: http://localhost:23000

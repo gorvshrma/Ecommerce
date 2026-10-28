@@ -35,3 +35,9 @@ crash.log
 crash.*.log
 *.secret
 *.secret.json
+
+# Private Kubernetes client and Helm settings
+.kube/
+*.kubeconfig
+kubeconfig
+*.values.private.yaml

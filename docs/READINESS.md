@@ -66,3 +66,19 @@ in the Terraform guide. No real AWS policy, TLS, state migration/locking, WAF,
 restore, cost, or Fargate deployment has been integration-tested. The app still
 needs a proper migration process, restricted DB credentials, RDS CA bundle,
 verified image settings, and an approved account/region/budget before deployment.
+
+## Kubernetes and Helm implementation - 2026-10-29
+
+Helm lint, positive/negative production rendering, rendered security checks, and
+Kubernetes 1.35 schema checks pass (14 standard Kubernetes resources, none skipped).
+A dedicated Kind lab runs the frontend, backend, and local PostgreSQL with healthy
+pods. Frontend HTTP, database readiness, and catalog requests pass. The initial
+interrupted Helm install was recovered using its existing revision; no data or
+credentials were reset. Argo CD v3.5.6 is installed for GitOps verification; see
+the PR's final evidence for sync results and the tested Git commit.
+
+This host uses cgroup v1, so the lab uses the documented temporary kubelet
+compatibility option. Production must use a supported cgroup-v2 host. The default
+Kind CNI does not establish NetworkPolicy enforcement. Kubernetes Secret storage
+is not claimed encrypted at rest. No cloud deployment, restore drill, production
+ingress/access-control test, or high-availability claim is made by this lab.

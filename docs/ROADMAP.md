@@ -33,7 +33,7 @@ No actual AWS account/region/budget is selected. No real AWS plan, apply, state
 bootstrap, or destroy has run. Review the [exceptions](../terraform/SECURITY-EXCEPTIONS.md).
 The next deployment step needs separate approval and the documented prerequisites.
 
-## Phase 4: deploy and practise recovery - not started
+## Phase 4: Kubernetes and GitOps code - implemented; live evidence below
 
 Add a deliberate access-control boundary, HTTPS, image release tags, and health
 checks. Test a deployment, a failed release rollback, and a database restore.
@@ -45,3 +45,8 @@ Keep the app's shopping features simple while learning operations.
 Link the reviewed change, commands someone else can repeat, and actual results.
 For a deployed feature, name the environment and show the check that proved it
 works. A folder, diagram, or green build alone does not prove a cloud service is running.
+
+The Helm chart, generated Kubernetes manifests, restricted Argo project and manual
+sync templates, local Secret helper, and CI checks now exist. Read
+[Kubernetes](KUBERNETES.md) for prerequisites and limits. Cloud deployment,
+backup restore, autoscaling, and production access controls are not claimed complete.

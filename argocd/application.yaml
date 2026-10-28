@@ -1,0 +1,21 @@
+# Apply only after choosing an approved immutable targetRevision and published images.
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: cloudcart
+  namespace: argocd
+spec:
+  project: cloudcart
+  source:
+    repoURL: https://github.com/gorvshrma/Ecommerce.git
+    targetRevision: REPLACE_WITH_REVIEWED_GIT_COMMIT
+    path: helm/cloudcart
+    helm:
+      releaseName: shop
+      valueFiles: [values-production.yaml]
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: cloudcart
+  syncPolicy:
+    syncOptions: [PruneLast=true, FailOnSharedResource=true]
+    # Manual sync initially. No automatic prune, self-heal, or deletion finalizer.

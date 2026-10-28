@@ -1,0 +1,75 @@
+---
+# Source: cloudcart/templates/policy.yaml
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: shop-cloudcart-default-deny
+spec:
+  podSelector: {matchLabels: {app: shop-cloudcart}}
+  policyTypes: [Ingress, Egress]
+---
+# Source: cloudcart/templates/policy.yaml
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: shop-cloudcart-dns
+spec:
+  podSelector: {matchLabels: {app: shop-cloudcart}}
+  policyTypes: [Egress]
+  egress:
+    - to:
+        - namespaceSelector: {matchLabels: {kubernetes.io/metadata.name: kube-system}}
+          podSelector: {matchLabels: {k8s-app: kube-dns}}
+      ports: [{protocol: UDP, port: 53}, {protocol: TCP, port: 53}]
+---
+# Source: cloudcart/templates/policy.yaml
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: shop-cloudcart-frontend-ingress
+spec:
+  podSelector: {matchLabels: {app: shop-cloudcart, component: frontend}}
+  policyTypes: [Ingress]
+  ingress:
+    - from:
+        - namespaceSelector: {matchLabels: {kubernetes.io/metadata.name: ingress-system}}
+      ports: [{protocol: TCP, port: 8080}]
+---
+# Source: cloudcart/templates/policy.yaml
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: shop-cloudcart-backend-ingress
+spec:
+  podSelector: {matchLabels: {app: shop-cloudcart, component: backend}}
+  policyTypes: [Ingress]
+  ingress:
+    - from:
+        - namespaceSelector: {matchLabels: {kubernetes.io/metadata.name: ingress-system}}
+      ports: [{protocol: TCP, port: 8000}]
+---
+# Source: cloudcart/templates/policy.yaml
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: shop-cloudcart-database-egress
+spec:
+  podSelector: {matchLabels: {app: shop-cloudcart, component: backend}}
+  policyTypes: [Egress]
+  egress:
+    - to:
+        - podSelector: {matchLabels: {app: shop-cloudcart, component: postgres}}
+      ports: [{protocol: TCP, port: 5432}]
+---
+# Source: cloudcart/templates/policy.yaml
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: shop-cloudcart-database-ingress
+spec:
+  podSelector: {matchLabels: {app: shop-cloudcart, component: postgres}}
+  policyTypes: [Ingress]
+  ingress:
+    - from:
+        - podSelector: {matchLabels: {app: shop-cloudcart, component: backend}}
+      ports: [{protocol: TCP, port: 5432}]

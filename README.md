@@ -95,3 +95,9 @@ No AWS resources have been created for these phases.
 
 See the [roadmap](docs/ROADMAP.md), [repository rules](docs/REPOSITORY-RULES.md),
 and [decision records](docs/adr/README.md) for the next steps and reasons.
+
+## Kubernetes and GitOps learning path
+
+Start with [Kubernetes and Helm](docs/KUBERNETES.md), then follow
+[Argo CD](argocd/README.md). The chart also generates plain manifests.
+The local lab is separate from Compose and does not provision AWS.
