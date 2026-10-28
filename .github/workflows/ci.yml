@@ -1,6 +1,7 @@
 name: CI
 
 on:
+  workflow_dispatch:
   push:
     branches:
       - main
@@ -28,12 +29,13 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
+          persist-credentials: false
           fetch-depth: 0
 
       - name: Set up Python
-        uses: actions/setup-python@v7
+        uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7
         with:
           python-version: "3.12"
           cache: pip
@@ -54,8 +56,19 @@ jobs:
             --cov-report=xml:coverage.xml \
             --cov-fail-under=70
 
+      - name: Validate optional Sonar configuration
+        if: github.event_name == 'push' && vars.ENABLE_SONAR == 'true'
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        run: |
+          if [ -z "$SONAR_TOKEN" ]; then
+            echo "::error::ENABLE_SONAR requires the SONAR_TOKEN repository secret"
+            exit 1
+          fi
+
       - name: SonarQube Cloud Scan
-        uses: SonarSource/sonarqube-scan-action@v7
+        if: github.event_name == 'push' && vars.ENABLE_SONAR == 'true'
+        uses: SonarSource/sonarqube-scan-action@c7ee0f9df90b7aa20e8dcf9695dcfe2e7da5b4f2 # v7
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         with:
@@ -72,10 +85,12 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
 
       - name: Set up Node.js
-        uses: actions/setup-node@v7
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
         with:
           node-version: "22"
           cache: npm
@@ -94,7 +109,9 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
 
       - name: Build backend image
         run: |
@@ -109,42 +126,34 @@ jobs:
             app/frontend
 
   trivy-scan:
-    name: Trivy Security Scan
+    name: Trivy Security Scan (${{ matrix.service }})
     runs-on: ubuntu-24.04
     timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        service: [backend, frontend]
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v7
-
-      - name: Build backend image for security scan
-        run: |
-          docker build \
-            --tag cloudcart-backend:${{ github.sha }} \
-            app/backend
-
-      - name: Build frontend image for security scan
-        run: |
-          docker build \
-            --tag cloudcart-frontend:${{ github.sha }} \
-            app/frontend
-
-      - name: Scan backend image
-        uses: aquasecurity/trivy-action@v0.36.0
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
-          image-ref: "cloudcart-backend:${{ github.sha }}"
-          format: "table"
-          exit-code: "1"
-          ignore-unfixed: true
-          vuln-type: "os,library"
-          severity: "CRITICAL,HIGH"
+          persist-credentials: false
 
-      - name: Scan frontend image
-        uses: aquasecurity/trivy-action@v0.36.0
+      - name: Build image for security scan
+        env:
+          SERVICE: ${{ matrix.service }}
+          IMAGE_TAG: ${{ github.sha }}
+        run: docker build --tag "cloudcart-${SERVICE}:${IMAGE_TAG}" "app/${SERVICE}"
+
+      - name: Scan image
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
         with:
-          image-ref: "cloudcart-frontend:${{ github.sha }}"
-          format: "table"
-          exit-code: "1"
+          version: v0.70.0
+          image-ref: "cloudcart-${{ matrix.service }}:${{ github.sha }}"
+          scanners: vuln
+          format: table
+          exit-code: '1'
           ignore-unfixed: true
-          vuln-type: "os,library"
-          severity: "CRITICAL,HIGH"
+          vuln-type: os,library
+          severity: CRITICAL,HIGH
