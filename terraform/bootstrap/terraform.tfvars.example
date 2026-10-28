@@ -1,0 +1,7 @@
+# Copy to terraform.tfvars (ignored by Git), then fill approved values.
+aws_region          = "REPLACE_WITH_APPROVED_REGION"
+aws_account_id      = "REPLACE_WITH_APPROVED_ACCOUNT"
+environment         = "dev"
+owner               = "REPLACE_WITH_RESPONSIBLE_PERSON_OR_TEAM"
+deployment_approved = false
+state_bucket_name = "REPLACE_WITH_GLOBALLY_UNIQUE_NAME"

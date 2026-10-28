@@ -1,0 +1,17 @@
+{{- $_ := required "existingSecret is required; credentials must be created outside Helm/Git" .Values.existingSecret -}}
+{{- if ne (int .Values.backend.replicas) 1 }}{{ fail "Keep one backend replica until migrations/startup coordination are implemented" }}{{ end -}}
+{{- if .Values.production -}}
+{{- if not .Values.ingress.accessControlsVerified }}{{ fail "Verify viewer/auth restrictions on your ingress before production rendering" }}{{ end -}}
+{{- if .Values.postgres.enabled }}{{ fail "Production requires a separately managed database" }}{{ end -}}
+{{- range $service := list .Values.frontend .Values.backend -}}
+{{- if not (regexMatch "@sha256:[a-f0-9]{64}$" $service.image) }}{{ fail "Production images must use sha256 digests" }}{{ end -}}
+{{- end -}}
+{{- if not .Values.ingress.enabled }}{{ fail "Production requires an HTTPS ingress" }}{{ end -}}
+{{- $_ := required "Set ingress.host" .Values.ingress.host -}}
+{{- $_ := required "Set ingress.className" .Values.ingress.className -}}
+{{- $_ := required "Set ingress.tlsSecret" .Values.ingress.tlsSecret -}}
+{{- if not (hasPrefix "https://" .Values.corsOrigins) }}{{ fail "Production CORS must use HTTPS" }}{{ end -}}
+{{- if not .Values.networkPolicy.enabled }}{{ fail "Production requires network policies" }}{{ end -}}
+{{- $_ := required "Set the private external database IPv4 CIDR" .Values.postgres.externalCidr -}}
+{{- if not (and (regexMatch "^(10[.]|192[.]168[.]|172[.](1[6-9]|2[0-9]|3[01])[.])" .Values.postgres.externalCidr) (regexMatch "/(1[6-9]|2[0-9]|3[0-2])$" .Values.postgres.externalCidr)) }}{{ fail "Use an approved private database IPv4 CIDR from /16 to /32" }}{{ end -}}
+{{- end -}}

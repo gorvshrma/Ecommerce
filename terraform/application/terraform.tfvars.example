@@ -1,0 +1,28 @@
+# Copy to terraform.tfvars (ignored by Git), then fill approved values.
+aws_region          = "REPLACE_WITH_APPROVED_REGION"
+aws_account_id      = "REPLACE_WITH_APPROVED_ACCOUNT"
+environment         = "dev"
+owner               = "REPLACE_WITH_RESPONSIBLE_PERSON_OR_TEAM"
+deployment_approved = false
+deployment_inputs_verified = false
+domain_name = "REPLACE_WITH_YOUR_HTTPS_HOSTNAME"
+certificate_arn = "REPLACE_WITH_EXISTING_ISSUED_CERTIFICATE_ARN"
+viewer_ipv4_cidrs = ["REPLACE_WITH_APPROVED_VIEWER_IPV4_CIDR"]
+images = {
+  frontend = "REPLACE_WITH_FRONTEND_ECR_DIGEST_REFERENCE"
+  backend  = "REPLACE_WITH_BACKEND_ECR_DIGEST_REFERENCE"
+}
+# Copy the platform application_inputs output below. These are IDs, not passwords.
+platform = {
+  vpc_id = "REPLACE"
+  public_subnet_ids = ["REPLACE", "REPLACE"]
+  application_subnet_ids = ["REPLACE", "REPLACE"]
+  alb_security_group_id = "REPLACE"
+  frontend_security_group_id = "REPLACE"
+  backend_security_group_id = "REPLACE"
+  kms_key_arn = "REPLACE"
+  database_url_secret_arn = "REPLACE"
+  frontend_repository_arn = "REPLACE"
+  backend_repository_arn = "REPLACE"
+}
+git_commit = "REPLACE_WITH_40_CHARACTER_SOURCE_COMMIT"

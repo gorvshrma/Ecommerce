@@ -1,0 +1,9 @@
+# Copy to ignored backend.hcl after the protected bucket exists.
+bucket                = "REPLACE_WITH_EXISTING_STATE_BUCKET"
+key                   = "cloudcart/dev/application/terraform.tfstate"
+region                = "REPLACE_WITH_BUCKET_REGION"
+kms_key_id            = "REPLACE_WITH_STATE_KMS_KEY_ARN"
+encrypt               = true
+use_lockfile          = true
+allowed_account_ids   = ["REPLACE_WITH_APPROVED_ACCOUNT_ID"]
+workspace_key_prefix = "cloudcart/dev/workspaces"

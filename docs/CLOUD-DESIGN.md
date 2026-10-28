@@ -1,6 +1,7 @@
 # Phase 3A: a cloud design you can understand
 
-Status: design only, dated 2026-10-29. No AWS resources, AWS accounts, Terraform
+Status: design with an offline-validated [Terraform implementation](../terraform/README.md),
+dated 2026-10-29. No AWS resources, AWS accounts, Terraform
 state buckets, or deployment credentials were created by this work. This page
 explains a possible next build. It does not authorize a paid deployment.
 
@@ -50,6 +51,12 @@ Do not call a single-task, single-database-instance demo highly available.
 Cloud frontend builds need the real HTTPS API address in `VITE_API_URL` and the
 matching frontend address in backend CORS settings. `localhost` would point to
 the visitor's computer and is not a cloud API address.
+
+The implementation chooses private AWS endpoints instead of a NAT gateway.
+It defaults to two frontend tasks, one backend task, Multi-AZ RDS, WAF, and
+365-day CloudWatch log retention. The example below remains a smaller historical
+comparison; it is not a quote for these implementation defaults. Price the actual
+configuration before approval.
 
 ## 3. Budget before build
 
@@ -127,8 +134,8 @@ that boundary before exposing any cloud endpoint. No real customer data is allow
 ## 5. Terraform state and change review
 
 Terraform state is a record of the resources it manages. It can contain private
-values, so treat it like a secret. The current repository has no implemented
-remote backend.
+values, so treat it like a secret. The repository now contains a remote backend configuration and a separate
+bootstrap root. No backend bucket has been created or migrated.
 
 For a future build, use a separate bootstrap change to create an encrypted,
 private S3 state bucket with versioning and limited IAM access. Choose a current
@@ -202,7 +209,7 @@ The local Compose `down` command still preserves the local database volume.
 
 Confirm the demo purpose, approved AWS account, region, maximum budget, runtime
 option, access-control boundary, retention rules, and who will run teardown.
-Then open a small infrastructure PR. No AWS resource creation is authorized by
+The infrastructure PR now implements the configuration only. No AWS resource creation is authorized by
 this design document or by the earlier local/CI work.
 
 ## Official sources checked on 2026-10-29

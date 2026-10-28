@@ -9,7 +9,7 @@ builds so you can catch problems before changing `main`.
 to `main`, and a manual run from GitHub Actions. A push to a feature branch by
 itself does not trigger this workflow; open a PR.
 
-## What the five jobs do
+## What the jobs do
 
 | Job | Simple explanation | Passing result |
 | --- | --- | --- |
@@ -18,12 +18,14 @@ itself does not trigger this workflow; open a PR.
 | Docker Build Validation | Package the backend and frontend | Both images build |
 | Trivy Security Scan (backend) | Look for known issues in the backend image | No fixable HIGH/CRITICAL issues |
 | Trivy Security Scan (frontend) | Check the frontend image separately | Same policy |
+| Kubernetes and Helm Validation | Lint, render, reject unsafe profiles, check schemas and GitOps scope | All checks pass without a cluster |
+| Terraform Validation | Check infrastructure format, schema, mocked security tests, Git hygiene, and Checkov | All checks pass; no AWS credentials or apply |
 
 Both scan jobs run even if one fails. A passing vulnerability scan does not mean
 there are no security issues: the policy ignores unfixed and lower-severity issues.
 No exceptions or suppressions were added to make these scans pass.
 
-The five checks are required by the active [main rules](REPOSITORY-RULES.md).
+The check names are listed in the [main rules](REPOSITORY-RULES.md).
 A successful [GitHub run](https://github.com/gorvshrma/Ecommerce/actions/runs/40774125898)
 verified all five on commit `16753d3`. Later revisions need their own green run.
 
@@ -37,7 +39,10 @@ These choices follow [GitHub guidance](https://docs.github.com/en/actions/refere
 Trivy is fixed at 0.70.0. Base image tags, every nested action, and every indirect
 dependency are not all fixed to immutable versions. Full reproducible builds,
 image signing, and SBOM publication are future work. An SBOM is an inventory of
-the software inside an image. CI does not deploy anything to AWS.
+the software inside an image. CI does not deploy anything to AWS. Terraform validation uses backend-disabled
+initialization and a mocked AWS provider; it uploads no state or saved plan.
+See [Terraform](../terraform/README.md) for the offline commands and
+[scanner exceptions](../terraform/SECURITY-EXCEPTIONS.md) for explicit limits.
 
 The `.dockerignore` files keep local settings, generated dependencies, and build
 outputs out of build inputs. The two image jobs build separately because each

@@ -1,0 +1,10 @@
+{{- if gt (int .Values.frontend.replicas) 1 }}
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: {{ include "cloudcart.name" . }}-frontend
+spec:
+  maxUnavailable: 1
+  selector:
+    matchLabels: {app: {{ include "cloudcart.name" . }}, component: frontend}
+{{- end }}

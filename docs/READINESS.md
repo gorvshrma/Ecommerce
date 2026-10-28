@@ -16,7 +16,8 @@ not make CloudCart a production-ready public shop.
 | Local image scans | Passed policy | Trivy 0.70.0 found no fixable HIGH/CRITICAL issues |
 | GitHub CI | Passed | All five jobs in the linked run below |
 | Main branch rules | Active | Ruleset 26079102 read back from GitHub |
-| AWS infrastructure | Not created | Phase 3 is a written design only |
+| Terraform code | Offline verified | Three roots, eight mocked Terraform tests, and Git hygiene tests |
+| AWS infrastructure | Not created | Configuration is written; no real AWS plan or apply |
 | Sonar analysis | Not verified | Skipped on PRs; opt-in on pushes |
 | Cloud backups and restore | Not implemented | Design and test procedure only |
 
@@ -49,3 +50,49 @@ The API has no user login or permission checks for creating products and orders.
 Do not expose it as a real public shop. A future cloud demo needs access controls.
 Metrics are available, but dashboards and alerts are not deployed. Secrets are
 kept out of the committed sample; this is not a cloud secret-management system.
+
+## Terraform implementation - 2026-10-29
+
+The code configures S3 state encryption, locking, version history, private access,
+and deletion protection. These settings are not live until a separately approved
+bootstrap. State, plans, private backend settings, and variable files must not
+enter Git; CI checks filenames and renamed state/plan artifacts. Provider lock
+files stay tracked because they contain dependency checksums, not resource state.
+
+All three roots validate offline. Eight mocked Terraform tests and three Git
+hygiene tests pass. The unchanged frontend also passes a local read-only/reduced-
+capability smoke check. Checkov has explicit resource-level exceptions, described
+in the Terraform guide. No real AWS policy, TLS, state migration/locking, WAF,
+restore, cost, or Fargate deployment has been integration-tested. The app still
+needs a proper migration process, restricted DB credentials, RDS CA bundle,
+verified image settings, and an approved account/region/budget before deployment.
+
+## Kubernetes and Helm implementation - 2026-10-29
+
+Helm lint, positive/negative production rendering, rendered security checks, and
+Kubernetes 1.35 schema checks pass (14 standard Kubernetes resources, none skipped).
+A dedicated Kind lab runs the frontend, backend, and local PostgreSQL with healthy
+pods. Frontend HTTP, database readiness, and catalog requests pass. The initial
+interrupted Helm install was recovered using its existing revision; no data or
+credentials were reset. Argo CD v3.5.6 is installed for GitOps verification; see
+the PR's final evidence for sync results and the tested Git commit.
+
+This host uses cgroup v1, so the lab uses the documented temporary kubelet
+compatibility option. Production must use a supported cgroup-v2 host. The default
+Kind CNI does not establish NetworkPolicy enforcement. Kubernetes Secret storage
+is not claimed encrypted at rest. No cloud deployment, restore drill, production
+ingress/access-control test, or high-availability claim is made by this lab.
+
+### Verified GitOps result
+
+Argo CD manually synced Git commit `d5aaa4628a256f4a6ece23d0a8b0fd655c75a688`
+and reported `Synced`, `Healthy`, and operation `Succeeded`. The database PVC
+remained Bound during the handoff. Direct localhost checks returned frontend
+HTTP 200 and API readiness with database connected. The shop is forwarded at
+http://localhost:23000 and the API at http://localhost:28000. These local forwards
+last only while their kubectl processes run.
+
+[CI run 40784503174](https://github.com/gorvshrma/Ecommerce/actions/runs/40784503174)
+passed all seven jobs for that commit. The seventh Kubernetes/Helm check is now
+required by the active main rules. No AWS resources were created. The exact
+cluster setup and its limits are in [Kubernetes](KUBERNETES.md).

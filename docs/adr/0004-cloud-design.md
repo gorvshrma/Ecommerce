@@ -1,6 +1,6 @@
 # ADR 0004: propose a managed cloud demo before a Kubernetes lab
 
-- Status: Proposed; no infrastructure approved or created
+- Status: Accepted for writing offline configuration only; no resource creation approved
 - Date: 2026-10-29
 
 ## Why this decision is needed

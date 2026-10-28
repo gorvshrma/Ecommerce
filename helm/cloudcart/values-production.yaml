@@ -1,0 +1,18 @@
+# Fill private/reviewed overrides before rendering. These placeholders deliberately fail.
+production: true
+existingSecret: cloudcart-database
+frontend:
+  image: REPLACE_WITH_SCANNED_IMAGE_DIGEST
+  replicas: 2
+backend:
+  image: REPLACE_WITH_SCANNED_IMAGE_DIGEST
+  replicas: 1
+corsOrigins: REPLACE_WITH_HTTPS_FRONTEND_ORIGIN
+postgres:
+  enabled: false
+  externalCidr: ""
+ingress:
+  enabled: true
+  className: ""
+  host: ""
+  tlsSecret: ""

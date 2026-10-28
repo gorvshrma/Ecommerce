@@ -1,0 +1,150 @@
+---
+# Source: cloudcart/templates/application.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: shop-cloudcart-frontend
+spec:
+  type: ClusterIP
+  selector: {app: shop-cloudcart, component: frontend}
+  ports: [{name: http, port: 8080, targetPort: http}]
+---
+# Source: cloudcart/templates/application.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: shop-cloudcart-backend
+spec:
+  type: ClusterIP
+  selector: {app: shop-cloudcart, component: backend}
+  ports: [{name: http, port: 8000, targetPort: http}]
+---
+# Source: cloudcart/templates/application.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: shop-cloudcart-frontend
+spec:
+  replicas: 1
+  revisionHistoryLimit: 3
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  selector:
+    matchLabels: {app: shop-cloudcart, component: frontend}
+  template:
+    metadata:
+      labels: {app: shop-cloudcart, component: frontend}
+    spec:
+      automountServiceAccountToken: false
+      topologySpreadConstraints:
+        - maxSkew: 1
+          topologyKey: kubernetes.io/hostname
+          whenUnsatisfiable: ScheduleAnyway
+          labelSelector:
+            matchLabels: {app: shop-cloudcart, component: frontend}
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 101
+        runAsGroup: 101
+        fsGroup: 101
+        seccompProfile: {type: RuntimeDefault}
+      containers:
+        - name: frontend
+          image: "cloudcart-k8s-frontend:local"
+          imagePullPolicy: IfNotPresent
+          command: ["nginx", "-g", "daemon off;"]
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities: {drop: [ALL]}
+          ports: [{name: http, containerPort: 8080}]
+          startupProbe:
+            httpGet: {path: /, port: http}
+            failureThreshold: 30
+            periodSeconds: 5
+          readinessProbe:
+            httpGet: {path: /, port: http}
+            periodSeconds: 5
+          livenessProbe:
+            httpGet: {path: /, port: http}
+            periodSeconds: 10
+          resources:
+            requests: {cpu: 100m, memory: 128Mi}
+            limits: {cpu: "1", memory: 512Mi}
+          volumeMounts:
+            - {name: tmp, mountPath: /tmp}
+            - {name: nginx, mountPath: /etc/nginx/nginx.conf, subPath: nginx.conf, readOnly: true}
+      volumes:
+        - name: tmp
+          emptyDir: {sizeLimit: 64Mi}
+        - name: nginx
+          configMap: {name: shop-cloudcart-nginx}
+---
+# Source: cloudcart/templates/application.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: shop-cloudcart-backend
+spec:
+  replicas: 1
+  revisionHistoryLimit: 3
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  selector:
+    matchLabels: {app: shop-cloudcart, component: backend}
+  template:
+    metadata:
+      labels: {app: shop-cloudcart, component: backend}
+    spec:
+      automountServiceAccountToken: false
+      topologySpreadConstraints:
+        - maxSkew: 1
+          topologyKey: kubernetes.io/hostname
+          whenUnsatisfiable: ScheduleAnyway
+          labelSelector:
+            matchLabels: {app: shop-cloudcart, component: backend}
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 999
+        runAsGroup: 999
+        fsGroup: 999
+        seccompProfile: {type: RuntimeDefault}
+      containers:
+        - name: backend
+          image: "docker-backend:latest"
+          imagePullPolicy: IfNotPresent
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities: {drop: [ALL]}
+          ports: [{name: http, containerPort: 8000}]
+          env:
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef: {name: cloudcart-database, key: DATABASE_URL}
+            - {name: CORS_ORIGINS, value: "http://localhost:23000"}
+            - {name: ENVIRONMENT, value: "local-kubernetes"}
+          startupProbe:
+            httpGet: {path: /health, port: http}
+            failureThreshold: 30
+            periodSeconds: 5
+          readinessProbe:
+            httpGet: {path: /ready, port: http}
+            periodSeconds: 5
+          livenessProbe:
+            httpGet: {path: /health, port: http}
+            periodSeconds: 10
+          resources:
+            requests: {cpu: 100m, memory: 128Mi}
+            limits: {cpu: "1", memory: 512Mi}
+          volumeMounts:
+            - {name: tmp, mountPath: /tmp}
+      volumes:
+        - name: tmp
+          emptyDir: {sizeLimit: 64Mi}

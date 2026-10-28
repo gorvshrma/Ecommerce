@@ -20,14 +20,20 @@ network, permissions, secrets, Terraform state, backup, restore, and teardown.
 The recommended first managed demo is ECS/Fargate with RDS, subject to a real
 regional estimate and your budget. EKS is a later Kubernetes learning option.
 
-## Phase 3B: implement infrastructure - not started
+## Phase 3B: infrastructure code - written, not applied
 
-Choose the region and budget, approve the design, then write Terraform in a
-new PR. Add format, validation, and infrastructure security checks such as
-Checkov. Review the plan before any apply. Do not put credentials into code.
-Creating resources requires separate approval; this phase has not done that.
+The [Terraform guide](../terraform/README.md) explains three separate roots:
+protected state storage, retained platform/data, and the application runtime.
+The code includes private networking, RDS-managed administrator credentials,
+immutable image repositories, HTTPS, WAF, restricted task roles, and retention
+protections. Format, validation, mocked tests, and static security scans run in CI.
+State, plans, and private inputs are ignored and blocked by a tracked-file guard.
 
-## Phase 4: deploy and practise recovery - not started
+No actual AWS account/region/budget is selected. No real AWS plan, apply, state
+bootstrap, or destroy has run. Review the [exceptions](../terraform/SECURITY-EXCEPTIONS.md).
+The next deployment step needs separate approval and the documented prerequisites.
+
+## Phase 4: Kubernetes and GitOps code - implemented; live evidence below
 
 Add a deliberate access-control boundary, HTTPS, image release tags, and health
 checks. Test a deployment, a failed release rollback, and a database restore.
@@ -39,3 +45,8 @@ Keep the app's shopping features simple while learning operations.
 Link the reviewed change, commands someone else can repeat, and actual results.
 For a deployed feature, name the environment and show the check that proved it
 works. A folder, diagram, or green build alone does not prove a cloud service is running.
+
+The Helm chart, generated Kubernetes manifests, restricted Argo project and manual
+sync templates, local Secret helper, and CI checks now exist. Read
+[Kubernetes](KUBERNETES.md) for prerequisites and limits. Cloud deployment,
+backup restore, autoscaling, and production access controls are not claimed complete.

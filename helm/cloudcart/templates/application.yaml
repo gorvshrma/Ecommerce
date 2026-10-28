@@ -1,0 +1,93 @@
+{{- range $name := list "frontend" "backend" }}
+{{- $settings := index $.Values $name }}
+{{- $port := ternary 8080 8000 (eq $name "frontend") }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "cloudcart.name" $ }}-{{ $name }}
+spec:
+  replicas: {{ $settings.replicas }}
+  revisionHistoryLimit: 3
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  selector:
+    matchLabels: {app: {{ include "cloudcart.name" $ }}, component: {{ $name }}}
+  template:
+    metadata:
+      labels: {app: {{ include "cloudcart.name" $ }}, component: {{ $name }}}
+    spec:
+      automountServiceAccountToken: false
+      topologySpreadConstraints:
+        - maxSkew: 1
+          topologyKey: kubernetes.io/hostname
+          whenUnsatisfiable: ScheduleAnyway
+          labelSelector:
+            matchLabels: {app: {{ include "cloudcart.name" $ }}, component: {{ $name }}}
+      {{- with $.Values.imagePullSecrets }}
+      imagePullSecrets: {{ toYaml . | nindent 8 }}
+      {{- end }}
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: {{ ternary 101 999 (eq $name "frontend") }}
+        runAsGroup: {{ ternary 101 999 (eq $name "frontend") }}
+        fsGroup: {{ ternary 101 999 (eq $name "frontend") }}
+        seccompProfile: {type: RuntimeDefault}
+      containers:
+        - name: {{ $name }}
+          image: {{ $settings.image | quote }}
+          imagePullPolicy: {{ $.Values.imagePullPolicy }}
+          {{- if eq $name "frontend" }}
+          command: ["nginx", "-g", "daemon off;"]
+          {{- end }}
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities: {drop: [ALL]}
+          ports: [{name: http, containerPort: {{ $port }}}]
+          {{- if eq $name "backend" }}
+          env:
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef: {name: {{ $.Values.existingSecret }}, key: DATABASE_URL}
+            - {name: CORS_ORIGINS, value: {{ $.Values.corsOrigins | quote }}}
+            - {name: ENVIRONMENT, value: {{ ternary "production" "local-kubernetes" $.Values.production | quote }}}
+          {{- end }}
+          startupProbe:
+            httpGet: {path: {{ ternary "/" "/health" (eq $name "frontend") }}, port: http}
+            failureThreshold: 30
+            periodSeconds: 5
+          readinessProbe:
+            httpGet: {path: {{ ternary "/" "/ready" (eq $name "frontend") }}, port: http}
+            periodSeconds: 5
+          livenessProbe:
+            httpGet: {path: {{ ternary "/" "/health" (eq $name "frontend") }}, port: http}
+            periodSeconds: 10
+          resources:
+            requests: {cpu: 100m, memory: 128Mi}
+            limits: {cpu: "1", memory: 512Mi}
+          volumeMounts:
+            - {name: tmp, mountPath: /tmp}
+            {{- if eq $name "frontend" }}
+            - {name: nginx, mountPath: /etc/nginx/nginx.conf, subPath: nginx.conf, readOnly: true}
+            {{- end }}
+      volumes:
+        - name: tmp
+          emptyDir: {sizeLimit: 64Mi}
+        {{- if eq $name "frontend" }}
+        - name: nginx
+          configMap: {name: {{ include "cloudcart.name" $ }}-nginx}
+        {{- end }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "cloudcart.name" $ }}-{{ $name }}
+spec:
+  type: ClusterIP
+  selector: {app: {{ include "cloudcart.name" $ }}, component: {{ $name }}}
+  ports: [{name: http, port: {{ $port }}, targetPort: http}]
+{{- end }}

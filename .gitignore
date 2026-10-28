@@ -14,3 +14,30 @@ dist/
 *.tfstate
 *.tfstate.*
 .DS_Store
+
+# Terraform state, saved plans, credentials, and machine-specific inputs.
+# Provider lock files (.terraform.lock.hcl) MUST stay tracked.
+*.tfstate*
+*.tflock
+.terraform.tfstate.lock.info
+*.tfplan
+*.tfplan.*
+*.plan
+tfplan
+tfplan.*
+plan.out
+*.tfvars
+*.tfvars.json
+*.tfbackend
+backend.hcl
+backend.*.hcl
+crash.log
+crash.*.log
+*.secret
+*.secret.json
+
+# Private Kubernetes client and Helm settings
+.kube/
+*.kubeconfig
+kubeconfig
+*.values.private.yaml
