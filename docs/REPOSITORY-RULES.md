@@ -7,15 +7,16 @@ Editing that file alone does not update GitHub; an administrator must apply it.
 
 ## What happens when you want to change main?
 
-Create a branch, push it, and open a pull request. GitHub checks these five jobs:
+Create a branch, push it, and open a pull request. GitHub checks these jobs:
 
 1. `Backend Tests & Code Quality`
 2. `Frontend Build`
 3. `Docker Build Validation`
 4. `Trivy Security Scan (backend)`
 5. `Trivy Security Scan (frontend)`
+6. `Terraform Validation`
 
-All five must pass. They must come from the GitHub Actions app (integration ID
+All six must pass. They must come from the GitHub Actions app (integration ID
 15368), so an unrelated status with the same name cannot satisfy the rule.
 Your branch must include the latest `main` changes. Resolve review conversations
 before merging. A draft PR must be marked ready before it can merge.

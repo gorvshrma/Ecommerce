@@ -16,7 +16,8 @@ not make CloudCart a production-ready public shop.
 | Local image scans | Passed policy | Trivy 0.70.0 found no fixable HIGH/CRITICAL issues |
 | GitHub CI | Passed | All five jobs in the linked run below |
 | Main branch rules | Active | Ruleset 26079102 read back from GitHub |
-| AWS infrastructure | Not created | Phase 3 is a written design only |
+| Terraform code | Offline verified | Three roots, eight mocked Terraform tests, and Git hygiene tests |
+| AWS infrastructure | Not created | Configuration is written; no real AWS plan or apply |
 | Sonar analysis | Not verified | Skipped on PRs; opt-in on pushes |
 | Cloud backups and restore | Not implemented | Design and test procedure only |
 
@@ -49,3 +50,19 @@ The API has no user login or permission checks for creating products and orders.
 Do not expose it as a real public shop. A future cloud demo needs access controls.
 Metrics are available, but dashboards and alerts are not deployed. Secrets are
 kept out of the committed sample; this is not a cloud secret-management system.
+
+## Terraform implementation - 2026-10-29
+
+The code configures S3 state encryption, locking, version history, private access,
+and deletion protection. These settings are not live until a separately approved
+bootstrap. State, plans, private backend settings, and variable files must not
+enter Git; CI checks filenames and renamed state/plan artifacts. Provider lock
+files stay tracked because they contain dependency checksums, not resource state.
+
+All three roots validate offline. Eight mocked Terraform tests and three Git
+hygiene tests pass. The unchanged frontend also passes a local read-only/reduced-
+capability smoke check. Checkov has explicit resource-level exceptions, described
+in the Terraform guide. No real AWS policy, TLS, state migration/locking, WAF,
+restore, cost, or Fargate deployment has been integration-tested. The app still
+needs a proper migration process, restricted DB credentials, RDS CA bundle,
+verified image settings, and an approved account/region/budget before deployment.

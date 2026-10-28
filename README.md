@@ -84,10 +84,13 @@ volume. [The runbook](docs/RUNBOOK.md) explains resets, tests, and rollback.
 
 ## Project status
 
-Local setup and five GitHub CI jobs have passed. The `main` branch now requires
-those checks before a PR can merge. [PR #1](https://github.com/gorvshrma/Ecommerce/pull/1)
+Local setup and the original five GitHub CI jobs have passed. Terraform now adds
+a separate validation job; its PR records the latest results. `main` rules require
+checks before a PR can merge. [PR #1](https://github.com/gorvshrma/Ecommerce/pull/1)
 contains the reviewed changes; check its live status for merge progress.
-AWS, Kubernetes deployment, cloud backups, and production alerts are planned.
+Terraform infrastructure is now written and checked without AWS access. Read the
+[beginner Terraform guide](terraform/README.md) before using it. AWS resources,
+Kubernetes deployment, tested cloud backups, and production alerts are not deployed.
 No AWS resources have been created for these phases.
 
 See the [roadmap](docs/ROADMAP.md), [repository rules](docs/REPOSITORY-RULES.md),

@@ -1,0 +1,11 @@
+# Copy to terraform.tfvars (ignored by Git), then fill approved values.
+aws_region          = "REPLACE_WITH_APPROVED_REGION"
+aws_account_id      = "REPLACE_WITH_APPROVED_ACCOUNT"
+environment         = "dev"
+owner               = "REPLACE_WITH_RESPONSIBLE_PERSON_OR_TEAM"
+deployment_approved = false
+availability_zones = ["REPLACE_WITH_ZONE_A", "REPLACE_WITH_ZONE_B"]
+database_engine_version = "REPLACE_WITH_SUPPORTED_POSTGRES_16_MINOR"
+# Multi-AZ stays enabled by default; changing it requires a reliability/cost decision.
+database_instance_class = "REPLACE_WITH_APPROVED_CLASS_AFTER_COST_ESTIMATE"
+database_admin_security_group_id = "REPLACE_WITH_APPROVED_PRIVATE_ADMIN_SECURITY_GROUP"

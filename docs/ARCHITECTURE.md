@@ -41,12 +41,16 @@ endpoint is an alerting system or a guarantee that the shop never fails.
 
 A pull request runs backend tests, a frontend build, both image builds, and
 separate vulnerability scans. An image is a packaged copy of the application.
-The `main` rules require the five checks to pass before merging.
+Terraform now adds a sixth check for infrastructure and state-file hygiene.
+The intended `main` rules require all six checks before merging.
 [CI](CI.md) explains each check and its limits.
 
 ## What is only planned
 
-There is no CloudCart AWS deployment from these phases. Terraform is a tool
+There is no CloudCart AWS deployment from these phases. Terraform configuration
+now exists in three roots and passes offline checks; see the
+[Terraform guide](../terraform/README.md). No resources or remote state bucket
+have been created. Terraform is a tool
 for describing infrastructure in code; empty folders are not infrastructure.
 ECR image storage, ECS or EKS hosting, RDS databases, cloud secrets, HTTPS,
 backups, alerts, Helm, and Argo CD are not running controls here.

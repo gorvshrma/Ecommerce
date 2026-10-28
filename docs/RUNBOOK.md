@@ -94,7 +94,7 @@ git revert COMMIT_ID
 git push -u origin codex/revert-bad-change
 ```
 
-Replace `COMMIT_ID` with the actual bad commit ID. Open a PR, wait for the five
+Replace `COMMIT_ID` with the actual bad commit ID. Open a PR, wait for all required
 checks, and merge the revert. For a merge commit use `git revert -m 1 COMMIT_ID`
 instead. Do not use `git reset --hard` or force-push `main` to undo shared work.
 
