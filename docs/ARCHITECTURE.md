@@ -1,41 +1,56 @@
-# CloudCart architecture
+# How CloudCart works
 
-## Implemented locally
+## The three parts running on your computer
 
-CloudCart is a three-tier application: a React/Vite frontend served by Nginx,
-a FastAPI backend, and PostgreSQL 16. Docker Compose creates the `frontend`,
-`backend`, and `postgres` services on a private bridge network. The frontend is
-published at `localhost:3000`, the API at `localhost:8000`; PostgreSQL has no
-host-published port. PostgreSQL data is stored in the named `postgres_data`
-volume. The backend waits for PostgreSQL's `pg_isready` health check before it
-starts. The frontend calls the API at `http://localhost:8000`.
+```text
+Your browser
+    | loads the page from localhost:3000
+    v
+Frontend: React page served by Nginx
+    | your browser sends API requests to localhost:8000
+    v
+Backend: FastAPI application
+    | reads and writes data using the Compose name postgres
+    v
+Database: PostgreSQL 16
+```
 
-The backend exposes health, readiness, info, metrics, catalog, and order
-endpoints. `/ready` checks a database query. Product seed data is inserted
-when the product table is empty. These are application behaviors, not proof of
-production availability or security.
+The frontend is what the user sees. The backend handles product and order
+requests. The database stores products, stock, and orders.
 
-## Implemented delivery controls
+Docker Compose starts these as three separate services: `frontend`, `backend`,
+and `postgres`. The frontend uses host port 3000. The backend uses host port
+8000. The database does not publish a port to the host computer.
 
-The repository includes GitHub Actions checks for backend tests, frontend
-build, Docker image builds, and Trivy image scans. These workflows run on
-configured GitHub events; this document does not assert their current remote
-status. Local Compose startup requires an explicit root `.env` file and checks
-required database configuration. `.env` is ignored by Git.
+A port is an address number used to reach a running service. `localhost` means
+this computer. The browser uses `localhost:8000`, while the backend uses the
+internal service name `postgres`. Those names serve different purposes.
 
-## Planned infrastructure
+## Where the data lives
 
-No AWS resources are created by this project phase. ECR, VPC, IAM, EKS, RDS,
-cloud load balancing, managed secrets, Terraform state storage, and a deployed
-Kubernetes environment are roadmap items, not implemented controls. Kubernetes,
-Helm, Argo CD, Prometheus/Grafana deployment, and production alerting also need
-to be verified against the repository and a live environment before being
-described as operational controls.
+The named volume `postgres_data` keeps database files outside the database
+container. Its actual Docker name includes the Compose project name, normally
+`docker_postgres_data`. Ordinary `down` keeps it; `down -v` deletes it.
+Keep the same Compose project name and file location to reuse the volume.
 
-See [Readiness](READINESS.md) and [Roadmap](ROADMAP.md) for status boundaries.
+The backend waits for PostgreSQL's startup check before it starts. `/health`
+checks that the API responds. `/ready` also tries a database query. Neither
+endpoint is an alerting system or a guarantee that the shop never fails.
 
-## Phase 2 delivery definition
+## What happens when code changes
 
-CI now pins top-level actions, keeps read-only permissions, and independently
-scans both images. Sonar is opt-in on pushes. See [CI](CI.md) for exact gates,
-local commands, limitations, and remote verification still required.
+A pull request runs backend tests, a frontend build, both image builds, and
+separate vulnerability scans. An image is a packaged copy of the application.
+The `main` rules require the five checks to pass before merging.
+[CI](CI.md) explains each check and its limits.
+
+## What is only planned
+
+There is no CloudCart AWS deployment from these phases. Terraform is a tool
+for describing infrastructure in code; empty folders are not infrastructure.
+ECR image storage, ECS or EKS hosting, RDS databases, cloud secrets, HTTPS,
+backups, alerts, Helm, and Argo CD are not running controls here.
+
+[Cloud design](CLOUD-DESIGN.md) compares possible future setups. It is a design,
+not a claim that those services exist. The [readiness page](READINESS.md) lists
+actual evidence and missing work.

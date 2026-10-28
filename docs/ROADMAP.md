@@ -1,43 +1,41 @@
-# DevOps roadmap
+# Roadmap: what we will do next
 
-Items below are planned unless explicitly identified as implemented in
-[Architecture](ARCHITECTURE.md) and [Readiness](READINESS.md). No cloud
-resources are part of Phase 1.
+## Phase 1: run locally - complete
 
-## Phase 1 - local configuration and project documentation
+Use a private `.env`, reject missing database settings, keep existing services
+and database storage, and provide exact setup commands. Local smoke checks pass.
+A smoke check is a quick check that the main parts start and respond.
 
-Implemented and locally smoke-tested: explicit Compose environment loading, required
-configuration validation, exact local setup instructions, and architecture,
-operations, readiness, roadmap, and decision records. Preserve the current
-application features and local service topology.
+## Phase 2: check code automatically - implemented and tested
 
-## Phase 2 - CI and supply-chain controls
+GitHub runs tests, builds, and two image scans. Actions are pinned to known
+commits. The five jobs passed on GitHub. `main` now has active PR and check rules.
+PR #1 is the review and merge point. See its live status and [Readiness](READINESS.md).
+Sonar is optional and has not been verified remotely.
 
-Implemented locally: pinned top-level actions, explicit read-only permissions,
-independent image scans, context exclusions, and opt-in Sonar. Backend coverage,
-fresh frontend build, both image builds, workflow validation, and both Trivy
-policy scans pass locally. See [CI](CI.md) and [Readiness](READINESS.md).
+## Phase 3A: design the cloud setup - written, not provisioned
 
-Still pending: an authorized push, GitHub-hosted results, required-check rules,
-and optional Sonar setup. Add Checkov or equivalent IaC scanning when IaC changes
-are introduced. Local verification is not proof of remote CI enforcement.
+Read [Cloud design](CLOUD-DESIGN.md). It compares costs and explains the proposed
+network, permissions, secrets, Terraform state, backup, restore, and teardown.
+The recommended first managed demo is ECS/Fargate with RDS, subject to a real
+regional estimate and your budget. EKS is a later Kubernetes learning option.
 
-## Phase 3 - cloud foundation
+## Phase 3B: implement infrastructure - not started
 
-Design and review Terraform for networking, IAM, ECR, and a runtime/data
-platform. Define secret handling, state locking and storage, cost limits,
-backup, and teardown procedures before any apply. Provisioning requires a
-separate explicit decision; it is outside this phase.
+Choose the region and budget, approve the design, then write Terraform in a
+new PR. Add format, validation, and infrastructure security checks such as
+Checkov. Review the plan before any apply. Do not put credentials into code.
+Creating resources requires separate approval; this phase has not done that.
 
-## Phase 4 - deployment and operations
+## Phase 4: deploy and practise recovery - not started
 
-Deploy workloads with deliberate health probes, resource limits, ingress,
-network policies, and rollback procedures. Add Helm and GitOps only with a
-defined cluster and release process. Establish metrics, dashboards, alerts,
-backup/restore drills, and documented incident and rollback exercises.
+Add a deliberate access-control boundary, HTTPS, image release tags, and health
+checks. Test a deployment, a failed release rollback, and a database restore.
+Add useful logs and alerts. Introduce Helm or GitOps only if using Kubernetes.
+Keep the app's shopping features simple while learning operations.
 
-## Completion evidence
+## How to call a phase complete
 
-For each phase, link reviewed code, reproducible commands, successful checks,
-and (for deployed controls) environment evidence. Do not label planned items as
-implemented based only on directory names or design documents.
+Link the reviewed change, commands someone else can repeat, and actual results.
+For a deployed feature, name the environment and show the check that proved it
+works. A folder, diagram, or green build alone does not prove a cloud service is running.

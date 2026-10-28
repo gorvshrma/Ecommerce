@@ -1,76 +1,51 @@
-# Readiness and implementation status
+# What is ready, and what is still missing?
 
-This document describes repository evidence for the local portfolio project.
-It is not a production certification or a claim that cloud infrastructure is
-deployed.
+Updated: 2026-10-29. This page records what we checked. Passing these checks does
+not make CloudCart a production-ready public shop.
 
-## Implemented in the repository
+| Area | Result | Evidence or limit |
+| --- | --- | --- |
+| Local configuration | Passed | Required database values cannot be missing or blank |
+| Local stack | Passed | All three containers became healthy |
+| Browser and API | Passed | Frontend, health, readiness, and catalog returned HTTP 200 |
+| Database connection | Passed | `/ready` reported `connected` |
+| Backend tests | Passed | 4 tests; local coverage 76.11%, above the 70% requirement |
+| Frontend | Passed | Fresh `npm ci` and production build |
+| Docker images | Passed | Backend and frontend builds |
+| Workflow syntax | Passed | actionlint 1.7.7 |
+| Local image scans | Passed policy | Trivy 0.70.0 found no fixable HIGH/CRITICAL issues |
+| GitHub CI | Passed | All five jobs in the linked run below |
+| Main branch rules | Active | Ruleset 26079102 read back from GitHub |
+| AWS infrastructure | Not created | Phase 3 is a written design only |
+| Sonar analysis | Not verified | Skipped on PRs; opt-in on pushes |
+| Cloud backups and restore | Not implemented | Design and test procedure only |
 
-- Three Compose services: frontend, backend, and PostgreSQL.
-- PostgreSQL health check gates backend startup; database readiness is
-  checked by the API `/ready` endpoint.
-- A named PostgreSQL data volume persists local data across ordinary Compose
-  shutdowns.
-- `.env` is ignored; Compose configuration is intended to be loaded explicitly
-  and required database settings are validated.
-- GitHub Actions workflow definitions include backend tests, frontend build,
-  Docker builds, and Trivy image scans.
-- Backend endpoints include `/health`, `/ready`, and `/metrics`.
+## Evidence you can open
 
-## Not established by these controls
+- [PR #1](https://github.com/gorvshrma/Ecommerce/pull/1).
+- [Successful GitHub CI run](https://github.com/gorvshrma/Ecommerce/actions/runs/40774125898)
+  for commit `16753d34d3ffef658033c1f79c9ea96f7a81ee24`.
+- [Active main ruleset](https://github.com/gorvshrma/Ecommerce/rules/26079102).
+- [Exact check names and rules](REPOSITORY-RULES.md).
 
-- A health endpoint does not provide uptime monitoring, alerting, or recovery.
-- A Compose health check is local container startup coordination, not a
-  production orchestration strategy.
-- A CI workflow definition does not establish that the workflow passed,
-  secrets are configured, or an artifact was deployed.
-- No AWS environment, production secrets manager, remote Terraform state,
-  backup/restore process, high availability, or disaster recovery is
-  established by Phase 1.
-- Repository directories or manifests alone do not establish a running
-  Kubernetes, Helm, Argo CD, or monitoring deployment.
+A later docs commit has its own CI run. Check the PR Checks tab for the latest
+revision; a green result for an older commit is not evidence for a newer one.
 
-Before production claims, implement and verify the corresponding roadmap
-controls in a target environment and document evidence, ownership, and
-operational procedures.
+## Important limits, in plain language
 
-## Local verification ï¿½ 2026-10-29
+The security scans ignore issues that have no fix yet and issues below HIGH
+severity. They do not prove that every security problem has been found. The
+frontend scan also warned that Alpine 3.24 was missing from the scanner's
+end-of-life list. We do not claim lifecycle support based on that scan.
 
-- Docker 28.0.4 and Compose v2.34.0-desktop.1 are installed.
-- Root `.env` passes `docker compose --env-file .env -f docker/docker-compose.yml config --quiet`.
-- A generated temporary credential verifies sample URL interpolation without
-  exposing credentials. Missing/blank required Compose values are rejected.
-- Rendered configuration retains the three services, frontend port 3000,
-  backend port 8000, no published database port, and `postgres_data` volume.
-- Backend rejects missing `DATABASE_URL` with the intended configuration error.
-- Follow-up verification: Docker Engine 29.9.2 is accessible outside the agent
-  sandbox. `docker compose --env-file .env -f docker/docker-compose.yml up --build -d --wait --wait-timeout 120`
-  successfully built and started all three services; each reports healthy.
-- Frontend `/`, API `/health`, `/ready`, and `/api/products` return HTTP 200;
-  readiness reports the database connected. No orders were created by these checks.
-- Existing backend tests pass in a disposable Compose backend container:
-  `docker compose --env-file .env -f docker/docker-compose.yml run --rm --no-deps -w /tmp -e PYTHONPATH=/app -v D:/Ecommerce/app/backend/tests:/tests:ro backend python -m pytest /tests -q -p no:cacheprovider`
-  reports 4 passed, with one upstream TestClient deprecation warning. The tests
-  use temporary SQLite storage, not the running PostgreSQL database.
-- The stack remains running. Database persistence across recreation has not
-  been smoke-tested; no volumes were deleted. Earlier sandbox-only failures
-  were environment limitations and are superseded by the successful container run.
-- No AWS resources were created; no changes were pushed.
+The tests show a TestClient deprecation warning. That is a warning about a
+future dependency change; the four tests still passed.
 
-## Phase 2 local verification - 2026-10-29
+Local tests use a temporary SQLite database, separate from PostgreSQL. We have
+not tested PostgreSQL persistence through container recreation or performed a
+backup restore drill. There is no verified high availability or disaster recovery.
 
-- actionlint 1.7.7 validates the changed workflow without findings.
-- Existing backend tests: 4 passed; coverage 76.11%, exceeding the unchanged
-  70% gate. One upstream Starlette/TestClient deprecation warning remains.
-- Fresh frontend build-stage run: `npm ci` and `npm run build` pass;
-  npm audit reports 0 vulnerabilities at verification time.
-- Both Compose runtime images build with context exclusions. No application
-  source, dependency versions, Compose services, ports, or volumes changed.
-- Trivy 0.70.0 scans of both exported runtime images exit 0 under the existing
-  fixable HIGH/CRITICAL OS/library policy. No suppressions were added.
-- Frontend scan reports Alpine 3.24 lifecycle metadata missing from this
-  scanner's EOL list. Vulnerability detection completes; no lifecycle support
-  conclusion is inferred. The policy excludes unfixed and lower-severity issues.
-- No GitHub-hosted run, branch-protection enforcement, or remote Sonar result
-  is claimed. See [CI](CI.md) for gates, reproduction, and remaining remote work.
-- All pre-existing local changes remain. No push or AWS provisioning occurred.
+The API has no user login or permission checks for creating products and orders.
+Do not expose it as a real public shop. A future cloud demo needs access controls.
+Metrics are available, but dashboards and alerts are not deployed. Secrets are
+kept out of the committed sample; this is not a cloud secret-management system.

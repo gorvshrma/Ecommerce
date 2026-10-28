@@ -1,46 +1,60 @@
-# CI and supply-chain checks
+# CI: automatic checks before merging
 
-## Implemented definitions
+CI means continuous integration. For CloudCart, it means GitHub runs tests and
+builds so you can catch problems before changing `main`.
 
-`.github/workflows/ci.yml` runs for pushes to `main`, pull requests targeting
-`main`, and manual dispatch. Workflow permissions remain `contents: read`;
-checkout does not persist credentials. Top-level actions are pinned to upstream
-commit IDs resolved from their existing version tags on 2026-10-29.
+## When it runs
 
-The intended required checks are:
+[The workflow](../.github/workflows/ci.yml) runs on PRs targeting `main`, pushes
+to `main`, and a manual run from GitHub Actions. A push to a feature branch by
+itself does not trigger this workflow; open a PR.
 
-| Check | Gate |
-| --- | --- |
-| Backend Tests & Code Quality | pytest, minimum 70% coverage |
-| Frontend Build | locked `npm ci` and production build |
-| Docker Build Validation | backend and frontend image builds |
-| Trivy Security Scan (backend) | fixable HIGH/CRITICAL OS and library vulnerabilities |
-| Trivy Security Scan (frontend) | same policy, independent matrix execution |
+## What the five jobs do
 
-The Trivy matrix disables fail-fast so a failure in one image does not cancel
-the other scan. Scanner version is explicitly `v0.70.0`, matching the existing
-action's default. The policy retains `ignore-unfixed: true`; a passing scan
-therefore does not mean there are no vulnerabilities. Secret scanning, SBOM
-publication, image signing, and deployment are not implemented by this workflow.
+| Job | Simple explanation | Passing result |
+| --- | --- | --- |
+| Backend Tests & Code Quality | Try API behavior and count executed code | Tests pass, coverage at least 70% |
+| Frontend Build | Install locked dependencies and build the shop page | Build finishes without an error |
+| Docker Build Validation | Package the backend and frontend | Both images build |
+| Trivy Security Scan (backend) | Look for known issues in the backend image | No fixable HIGH/CRITICAL issues |
+| Trivy Security Scan (frontend) | Check the frontend image separately | Same policy |
 
-Builds are repeated in the Docker validation and scan jobs deliberately: jobs
-have independent daemons, and avoiding duplication would require image transfer
-or a registry. No registry credentials or image pushes are needed here.
-`.dockerignore` files exclude local environment files, dependencies, and generated
-outputs; frontend `COPY . .` no longer imports host `node_modules` into Linux.
-Base-image tags and transitive dependencies/actions are not all digest-pinned;
-top-level action pinning is a specific control, not full build reproducibility.
+Both scan jobs run even if one fails. A passing vulnerability scan does not mean
+there are no security issues: the policy ignores unfixed and lower-severity issues.
+No exceptions or suppressions were added to make these scans pass.
 
-## Optional Sonar
+The five checks are required by the active [main rules](REPOSITORY-RULES.md).
+A successful [GitHub run](https://github.com/gorvshrma/Ecommerce/actions/runs/40774125898)
+verified all five on commit `16753d3`. Later revisions need their own green run.
 
-Sonar runs only on push events when repository variable `ENABLE_SONAR` is exactly
-`true`. Configure the repository secret `SONAR_TOKEN` before enabling it. A
-missing token then fails with a configuration error. Pull requests and manual
-dispatch do not run Sonar or receive its token through these steps. Backend
-tests and coverage run regardless. Sonar project configuration is retained;
-no remote Sonar run or server-side quality gate has been verified.
+## Small security choices
 
-## Local verification commands
+The workflow token only reads repository contents. Checkout does not keep its
+Git credentials in the checkout configuration. Top-level actions are pinned to
+commit IDs, so changing an upstream version tag does not silently replace them.
+These choices follow [GitHub guidance](https://docs.github.com/en/actions/reference/security/secure-use).
+
+Trivy is fixed at 0.70.0. Base image tags, every nested action, and every indirect
+dependency are not all fixed to immutable versions. Full reproducible builds,
+image signing, and SBOM publication are future work. An SBOM is an inventory of
+the software inside an image. CI does not deploy anything to AWS.
+
+The `.dockerignore` files keep local settings, generated dependencies, and build
+outputs out of build inputs. The two image jobs build separately because each
+GitHub job has its own Docker engine. Sharing images would add extra storage or
+a registry; this small project does not need that yet.
+
+## Sonar is optional
+
+Sonar is a separate code-analysis service. It is not a required remote quality
+gate here. To enable it, set repository variable `ENABLE_SONAR` to `true` and add
+the repository secret `SONAR_TOKEN`. An enabled scan with a missing token fails
+with a clear message. Never put the token in a file or terminal command.
+
+The Sonar steps run on push events only, not PRs or manual runs. A merged push
+to `main` can run them if enabled. Remote Sonar results have not been verified.
+
+## Repeat the checks locally in PowerShell
 
 Run from the repository root, with Docker running:
 
@@ -52,9 +66,10 @@ docker build --no-cache --target build --tag cloudcart-frontend-ci:phase2 app/fr
 docker run --rm -v "${PWD}/.github/workflows/ci.yml:/ci.yml:ro" rhysd/actionlint:1.7.7 /ci.yml
 ```
 
-The disposable test container uses SQLite under `/tmp`. It does not modify the
-running PostgreSQL volume or the local test database. For scans without exposing
-the Docker socket, export images and mount only the export directory:
+The test container uses a temporary SQLite file. It does not change PostgreSQL
+or your local test database. `actionlint` checks workflow syntax.
+
+To scan images without sharing the Docker engine socket with the scanner:
 
 ```powershell
 $reports = Join-Path $env:TEMP ('cloudcart-trivy-' + [guid]::NewGuid())
@@ -67,49 +82,16 @@ foreach ($service in @('backend','frontend')) {
 }
 ```
 
-Exit 0 means the configured policy passed; exit 1 can mean vulnerabilities or a
-scanner error. Inspect the JSON and error output to distinguish them. Both scans
-must pass. Reports and image archives are local files and must not be committed.
-Vulnerability data changes over time; retain scanner version, image IDs, database
-metadata, and reports with the verification evidence.
+Exit 0 means the policy passed. Exit 1 may mean findings or a scanner error;
+read the JSON report and error output. Both scans must pass. Keep image exports
+and reports outside Git. Reports change as new vulnerabilities are published.
 
-## Remote controls still to verify
+## Known warnings and maintenance
 
-No workflow was pushed or dispatched during this phase. A local pass does not
-prove a GitHub-hosted run or branch protection. After a separately authorized
-push, confirm all five checks above on the actual revision, then configure
-required checks in repository rules. The old single `Trivy Security Scan` check
-is replaced by the two matrix check names; update any existing rule accordingly.
-No repository settings or remote secrets were changed in this phase.
+Local tests pass with a TestClient deprecation warning. The frontend scan warns
+that Alpine 3.24 is missing from this scanner's end-of-life list. Neither is
+proof of lifecycle support; review these warnings when updating dependencies.
 
-## Pin maintenance and references
-
-Resolve an upstream tag and its peeled commit with `git ls-remote` before
-updating a pin; review release notes and the commit diff, then rerun local checks.
-Do not replace a SHA with a floating tag just to fix a failing check.
-
-- [GitHub secure use reference](https://docs.github.com/en/actions/reference/security/secure-use)
-- [Trivy action inputs at the pinned commit](https://github.com/aquasecurity/trivy-action/blob/ed142fd0673e97e23eac54620cfb913e5ce36c25/action.yaml)
-
-## Phase 2 local verification - 2026-10-29
-
-- actionlint 1.7.7 validates the changed workflow without findings.
-- Existing backend tests: 4 passed; coverage 76.11%, exceeding the unchanged
-  70% gate. One upstream Starlette/TestClient deprecation warning remains.
-- Fresh frontend build-stage run: `npm ci` and `npm run build` pass;
-  npm audit reports 0 vulnerabilities at verification time.
-- Both Compose runtime images build with context exclusions. No application
-  source, dependency versions, Compose services, ports, or volumes changed.
-- Trivy 0.70.0 scans of both exported runtime images exit 0 under the existing
-  fixable HIGH/CRITICAL OS/library policy. No suppressions were added.
-- Frontend scan reports Alpine 3.24 lifecycle metadata missing from this
-  scanner's EOL list. Vulnerability detection completes; no lifecycle support
-  conclusion is inferred. The policy excludes unfixed and lower-severity issues.
-- No GitHub-hosted run, branch-protection enforcement, or remote Sonar result
-  is claimed. See [CI](CI.md) for gates, reproduction, and remaining remote work.
-- All pre-existing local changes remain. No push or AWS provisioning occurred.
-
-### Scanned image IDs
-
-- backend: image `sha256:3273a4d0b81cd3d4de636ad8030e49289aee5058848fe3d2b93a3a4f1fab51e8`, 0 fixable HIGH/CRITICAL findings.
-- frontend: image `sha256:4275c4dddc5288b46d67e4347673de92ee5b81d0a852f6cb2ac2f2a91cf8c954`, 0 fixable HIGH/CRITICAL findings.
+To update an action pin, resolve the official tag with `git ls-remote`, review
+the release and commit diff, change the SHA, and rerun checks. Do not weaken a
+check to make a failing change pass. Local results and limits are in [Readiness](READINESS.md).

@@ -1,11 +1,10 @@
-# Architecture decision records
+# Decision log
 
-This directory records decisions that shape CloudCart's architecture and
-operating model. Accepted decisions can be revisited when new evidence or
-requirements justify a change.
+An ADR is a short architecture decision record. It explains why we chose an
+approach and what tradeoffs it brings. Accepted means we use that decision;
+proposed means it is still a suggestion.
 
-## Index
-
-- [ADR 0001: Keep Phase 1 local and preserve the Compose topology](0001-phase-1-local-compose.md)
-- [ADR 0002: Load local configuration explicitly](0002-explicit-compose-environment.md)
-- [ADR 0003: CI gates and action pins](0003-ci-gates-and-action-pins.md)
+1. [Keep Phase 1 local](0001-phase-1-local-compose.md) - accepted.
+2. [Load local settings explicitly](0002-explicit-compose-environment.md) - accepted.
+3. [Independent CI checks and action pins](0003-ci-gates-and-action-pins.md) - accepted.
+4. [First managed cloud demo](0004-cloud-design.md) - proposed, not deployed.

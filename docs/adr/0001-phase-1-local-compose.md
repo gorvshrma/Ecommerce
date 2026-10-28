@@ -1,23 +1,20 @@
-# ADR 0001: Keep Phase 1 local and preserve the Compose topology
+# ADR 0001: keep the first phase local
 
 - Status: Accepted
 - Date: 2026-10-29
 
-## Context
+## Why this decision was needed
 
-CloudCart is a small portfolio application with an existing frontend, API, and
-PostgreSQL Compose stack. Phase 1 focuses on trustworthy local setup and
-documentation. Changing service topology or creating cloud resources would
-expand scope and make review and rollback less focused.
+The app already had three parts running in Docker Compose. We needed a safe,
+repeatable local setup before spending money on cloud infrastructure.
 
 ## Decision
 
-Keep the existing three Compose services, ports, network, and named database
-volume. Do not create AWS resources in Phase 1. Describe cloud and production
-controls as planned until they are implemented and verified.
+Keep the three services, their ports, network, and database volume. Add clear
+configuration checks and documentation. Do not create AWS resources in this phase.
 
-## Consequences
+## What this means
 
-Local development remains familiar and the existing database volume remains
-the persistence boundary. Cloud deployment and production readiness require
-later decisions, implementation, and evidence.
+Existing local behavior stays familiar. The database volume remains the local
+storage boundary. Cloud hosting and production reliability need separate work
+and real evidence; a design document does not provide either.

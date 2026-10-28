@@ -1,0 +1,61 @@
+{
+  "target": "branch",
+  "bypass_actors": [],
+  "enforcement": "active",
+  "conditions": {
+    "ref_name": {
+      "include": [
+        "refs/heads/main"
+      ],
+      "exclude": []
+    }
+  },
+  "rules": [
+    {
+      "type": "deletion"
+    },
+    {
+      "type": "non_fast_forward"
+    },
+    {
+      "parameters": {
+        "dismiss_stale_reviews_on_push": true,
+        "required_review_thread_resolution": true,
+        "required_approving_review_count": 0,
+        "require_code_owner_review": false,
+        "require_last_push_approval": false
+      },
+      "type": "pull_request"
+    },
+    {
+      "parameters": {
+        "required_status_checks": [
+          {
+            "integration_id": 15368,
+            "context": "Backend Tests & Code Quality"
+          },
+          {
+            "integration_id": 15368,
+            "context": "Frontend Build"
+          },
+          {
+            "integration_id": 15368,
+            "context": "Docker Build Validation"
+          },
+          {
+            "integration_id": 15368,
+            "context": "Trivy Security Scan (backend)"
+          },
+          {
+            "integration_id": 15368,
+            "context": "Trivy Security Scan (frontend)"
+          }
+        ],
+        "do_not_enforce_on_create": false,
+        "strict_required_status_checks_policy": true
+      },
+      "type": "required_status_checks"
+    }
+  ],
+  "name": "CloudCart main safety rules"
+}
