@@ -1,20 +1,22 @@
 
 .PHONY: up down build logs test clean
 
+COMPOSE = docker compose --env-file .env -f docker/docker-compose.yml
+
 up:
-	docker compose -f docker/docker-compose.yml up --build -d
+	$(COMPOSE) up --build -d
 
 down:
-	docker compose -f docker/docker-compose.yml down
+	$(COMPOSE) down
 
 build:
-	docker compose -f docker/docker-compose.yml build
+	$(COMPOSE) build
 
 logs:
-	docker compose -f docker/docker-compose.yml logs -f
+	$(COMPOSE) logs -f
 
 test:
 	cd app/backend && python -m pytest -v
 
 clean:
-	docker compose -f docker/docker-compose.yml down -v
+	$(COMPOSE) down -v
